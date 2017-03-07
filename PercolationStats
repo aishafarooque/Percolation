@@ -1,0 +1,78 @@
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.StdRandom;
+import edu.princeton.cs.algs4.StdStats;
+
+// Estimates percolation threshold for an N-by-N percolation system.
+public class PercolationStats {
+    private int test;
+    private Percolation matrix;
+    private int N;
+    private int T;
+    private int stdrandom;
+    private double[] p;
+    private int t;
+    // Perform T independent experiments (Monte Carlo simulations) on an 
+    // N-by-N grid.
+    public PercolationStats(int N, int T) {
+        this.N = N; //initialize
+        this.test = T; //initialize 
+        this.t = t; //umber of tests performed
+        p = new double [test]; //declare new variable
+        
+        for (int i = 0; i < test; i++) {
+            matrix = new Percolation(N); //connect 
+            int count = 0;
+            while (!matrix.percolates()) {
+                int row = StdRandom.uniform(N); //give you random number
+                int col = StdRandom.uniform(N); //between 0 to N                
+                if (matrix.isOpen(row, col) == true) { //check for open
+                    t++; //if not, increase test count
+                }
+                else {
+                    matrix.open(row, col); //open it up
+                    count++;//increase counter
+                }
+            }
+            p[i] = count / (double) (N * N);
+        }
+        
+    }
+    
+    // Sample mean of percolation threshold.
+    public double mean() {
+        return StdStats.mean(p);
+    }
+
+    // Sample standard deviation of percolation threshold.
+    public double stddev() {
+        return StdStats.stddev(p);
+    }
+
+    // Low endpoint of the 95% confidence interval.
+    public double confidenceLow() {
+        double one = stddev() / Math.sqrt(test);
+        double two = 1.96 * one;
+        double three = mean() + two;
+        return three;
+    }
+
+    // High endpoint of the 95% confidence interval.
+    public double confidenceHigh() {
+        double one = stddev() / Math.sqrt(test);
+        double two = 1.96 * one;
+        double three = mean() - two;
+        return three;
+        //return mean() - (1.96 * stddev() / Math.sqrt(test));
+    }
+
+    // Test client. [DO NOT EDIT]
+    public static void main(String[] args) {
+        int N = Integer.parseInt(args[0]);
+        int T = Integer.parseInt(args[1]);
+        PercolationStats stats = new PercolationStats(N, T);
+        StdOut.printf("mean           = %f\n", stats.mean());
+        StdOut.printf("stddev         = %f\n", stats.stddev());
+        StdOut.printf("confidenceLow  = %f\n", stats.confidenceLow());
+        StdOut.printf("confidenceHigh = %f\n", stats.confidenceHigh());
+    }
+}
