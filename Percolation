@@ -1,0 +1,159 @@
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+
+// Models an N-by-N percolation system.
+public class Percolation {
+    //declare everything used ahead
+    private int N; //grid size N^2
+    private WeightedQuickUnionUF a; //union number 1
+    private WeightedQuickUnionUF b; //backwash solver 
+    private int sink; //collects water
+    private int source = 0; //has water
+    private boolean[][] matrix;
+    private boolean[][] grid;
+    private int initializedN;
+    private int count = 0;  
+
+    // Create an N-by-N grid, with all sites blocked.
+    public Percolation(int N) {
+        this.initializedN = N;
+        //this.matrix = new boolean[N][N];
+        this.matrix = matrix; //the grid
+        matrix = new boolean[N][N]; //format
+        //initializedN^2 is accounting for the source and 
+        //the sink that are on the top and bottom.
+        this.sink = (initializedN * initializedN) + 1; //tagging the sink
+        
+        //two unions needed to solve the backwash problem        
+        a = new WeightedQuickUnionUF(N * N + 2);
+        b = new WeightedQuickUnionUF(N * N + 2);
+        
+        if (N <= 0) { //throw exception for illegal input ie N < 0
+            throw new IllegalArgumentException("Invalid input");
+        }
+
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+            //connect initial/ending blocks to sink/source
+            a.union(encode((N-1), j), sink);
+            a.union(encode(0, i), source);
+            b.union(encode(0, j), source);
+            b.union(encode(0, i), source);
+            } 
+        }
+    }
+    // Open site (i, j) if it is not open already.
+    public void open(int i, int j) {
+        matrix[i][j] = true; 
+        if (i < 0) { //throw exception for illegal input 
+            throw new IllegalArgumentException("Invalid; values < 0.");
+        }
+        
+        if (j < 0) { //throw exception for illegal input
+           throw new IllegalArgumentException("Invalid input; values < 0.");
+        }
+        
+        //opening cells:
+        
+        if ((i-1) > 0) { //i is the row; i-1 left cell open
+            if (isOpen(i-1, j)) {
+            a.union(encode(i, j), encode(i-1, j)); 
+            b.union(encode(i, j), encode(i-1, j));
+            b.union(sink, source);
+            }
+        }
+        
+        if ((i+1) < initializedN) { //i is the row; right cell open
+            if (isOpen(i+1, j)) {
+            a.union(encode(i, j), encode(i+1, j));
+            b.union(encode(i, j), encode(i+1, j));
+            }
+        }
+        
+        if ((j-1) > 0) { //j is column; left cell open
+            if (isOpen(i, j-1)) {
+            a.union(encode(i, j), encode(i, j-1));
+            b.union(encode(i, j), encode(i, j-1));
+            }
+        }
+    
+        if ((j+1) < initializedN) {
+            if (isOpen(i, j+1)) { //j is column; right cell open
+            a.union(encode(i, j), encode(i, j+1));
+            b.union(encode(i, j), encode(i, j+1));
+            }
+        }
+        count++;
+        }
+    
+    // Is site (i, j) open?
+    public boolean isOpen(int i, int j) {
+        //boolean grid[][];
+        //return true or false based on the neighbouring sites.
+        return matrix[i][j];
+    }
+
+    // Is site (i, j) full?
+    public boolean isFull(int i, int j) {
+        //checks for full sites
+        if (b.connected(source, encode(i, j))) return true;
+        return false;
+    }
+
+    // Number of open sites.
+    public int numberOfOpenSites() {
+        return count;
+    }
+
+    // Does the system percolate?
+    public boolean percolates() {
+        //the system is going to percolate if the sink and the source
+        //are connected and the sites are filled.
+        
+        if (a.connected(0, sink) == true) return true;
+        return false;
+    }
+
+    // An integer ID (1...N) for site (i, j).
+    private int encode(int i, int j) {
+        //encode formula from piazza, used to number the individual
+        //sites like a graph.
+        if (i < 0) { //throw exception for illegal input
+            throw new IllegalArgumentException("Invalid input; values < 0.");
+        }
+        
+        if (j < 0) { //throw exception for illegal input
+            throw new IllegalArgumentException("Invalid input; values < 0.");
+        }
+        return (initializedN * i) + 1 + j;
+    }
+
+    // Test client. [DO NOT EDIT]
+    public static void main(String[] args) {
+        String filename = args[0];
+        In in = new In(filename);
+        int N = in.readInt();
+        Percolation perc = new Percolation(N);
+        while (!in.isEmpty()) {
+            int i = in.readInt();
+            int j = in.readInt();
+            perc.open(i, j);
+        }
+        StdOut.println(perc.numberOfOpenSites() + " open sites");
+        if (perc.percolates()) {
+            StdOut.println("percolates");
+        }
+        else {
+            StdOut.println("does not percolate");
+        }
+
+        // Check if site (i, j) optionally specified on the command line
+        // is full.
+        if (args.length == 3) {
+            int i = Integer.parseInt(args[1]);
+            int j = Integer.parseInt(args[2]);
+            StdOut.println(perc.isFull(i, j));
+        }
+    }
+}
